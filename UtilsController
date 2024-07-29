@@ -1,0 +1,54 @@
+package com.cisco.sbp.reporting.sbpreporting.controller.futurebillingreport;
+
+import com.cisco.sbp.reporting.sbpreporting.dao.futurebillingreport.SbpBillingReportRepository;
+import com.cisco.sbp.reporting.sbpreporting.model.futurebillingreport.kafka.FutureBillingReportRequest;
+import com.cisco.sbp.reporting.sbpreporting.model.futurebillingreport.sbpDb.SbpFutureBillingReport;
+import com.cisco.sbp.reporting.sbpreporting.service.futurebillingreport.FutureBillingReportService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@Component
+@RequestMapping("/fbr/report")
+public class UtilsController {
+
+    @Autowired
+    FutureBillingReportService futureBillingReportService;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(UtilsController.class);
+
+    /**
+     * Get Subscription Billing Report of the requested Bids as a zip file
+     * containing reports of individual Bid
+     *
+     * @param requestID or Request ID.
+     * @return Zip File containing reports or appropriate Error Response
+     */
+    @PostMapping(value = "/test", produces = "application/json", consumes = "application/json")
+    public ResponseEntity<Object> generateZipFiles(@RequestBody String requestPayload) {
+
+        try {
+            LOGGER.info("New Future Billing Report Request Received From SUB UI {} ", requestPayload);
+            ObjectMapper objectMapper = new ObjectMapper();
+            FutureBillingReportRequest futureBillingReportRequest = objectMapper.readValue(requestPayload, FutureBillingReportRequest.class);
+            futureBillingReportService.processFutureBillingReport(futureBillingReportRequest);
+            LOGGER.info("Completed Processing Future Billing Report Request ID :: {}", futureBillingReportRequest.getRequestId());
+            return ResponseEntity.ok("Success");
+        } catch (JsonProcessingException e) {
+            //todo better logging
+            LOGGER.error("Error while parsing the json payload: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body("Invalid Json");
+        } catch (Exception e) {
+            //todo better logging
+            LOGGER.error("Error while processing the message: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("Internal Server Error");
+        }
+    }
+
+}
