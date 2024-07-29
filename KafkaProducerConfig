@@ -1,0 +1,42 @@
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.support.serializer.JsonSerializer;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration
+public class KafkaProducerConfig {
+
+    @Value("${sbp.billing.report.kafka.producer.bootstrap-servers}")
+    @Value("${sbp.billing.report.kafka.consumer.bootstrap-servers}")
+    private String bootstrapServers;
+
+    @Value("${sbp.billing.report.kafka.producer.kafka.ssl.key-store-location}")
+    @Value("${sbp.billing.report.kafka.consumer.kafka.ssl.key-store-location}")
+    private String keyStoreLocation;
+
+    @Value("${sbp.billing.report.kafka.producer.kafka.ssl.key-store-password}")
+    @Value("${sbp.billing.report.kafka.consumer.kafka.ssl.key-store-password}")
+    private String keyStorePassword;
+
+    @Value("${sbp.billing.report.kafka.producer.kafka.ssl.trust-store-location}")
+    @Value("${sbp.billing.report.kafka.consumer.kafka.ssl.trust-store-location}")
+    private String trustStoreLocation;
+
+    @Value("${sbp.billing.report.kafka.producer.kafka.ssl.trust-store-password}")
+    @Value("${sbp.billing.report.kafka.consumer.kafka.ssl.trust-store-password}")
+    private String trustStorePassword;
+
+    @Value("${sbp.billing.report.kafka.producer.kafka.ssl.key-password}")
+    @Value("${sbp.billing.report.kafka.consumer.kafka.ssl.key-password}")
+    private String keyPassword;
+
+
+    public Map<String, Object> producerConfig() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+
+        props.put("security.protocol", "SSL");
