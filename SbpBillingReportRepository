@@ -1,0 +1,11 @@
+package com.cisco.sbp.reporting.sbpreporting.dao.futurebillingreport;
+
+import com.cisco.sbp.reporting.sbpreporting.model.futurebillingreport.sbpDb.SbpBillingReport;
+import com.cisco.sbp.reporting.sbpreporting.model.futurebillingreport.sbpDb.SbpFutureBillingReport;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface SbpBillingReportRepository extends JpaRepository<SbpBillingReport,String> {
+public interface SbpBillingReportRepository extends JpaRepository<SbpFutureBillingReport,String> {
+
+
+}
