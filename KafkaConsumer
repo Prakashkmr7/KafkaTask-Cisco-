@@ -1,0 +1,67 @@
+package com.cisco.sbp.reporting.sbpreporting.kafka;
+
+import com.cisco.sbp.reporting.sbpreporting.dao.futurebillingreport.SbpBillingReportRepository;
+import com.cisco.sbp.reporting.sbpreporting.model.futurebillingreport.kafkaConsumer.KafkaRequestPayload;
+import com.cisco.sbp.reporting.sbpreporting.model.futurebillingreport.sbpDb.SbpBillingReport;
+import com.cisco.sbp.reporting.sbpreporting.model.futurebillingreport.kafka.FutureBillingReportRequest;
+import com.cisco.sbp.reporting.sbpreporting.model.futurebillingreport.sbpDb.SbpFutureBillingReport;
+import com.cisco.sbp.reporting.sbpreporting.service.futurebillingreport.FutureBillingReportService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Slf4j
+@Service("SubscriptionBillingReportConsumerService")
+public class kafkaConsumer {
+public class KafkaConsumer {
+
+    FutureBillingReportService futureBillingReportService;
+
+    @Autowired
+    SbpBillingReportRepository sbpBillingReportRepository;
+    public KafkaConsumer(FutureBillingReportService futureBillingReportService) {
+        this.futureBillingReportService = futureBillingReportService;
+    }
+
+    @KafkaListener(topics = "${sbp.billing.report.kafka.producer.topic-name}",
+            groupId = "${bp.billing.report.kafka.producer.group-id}",
+    @KafkaListener(topics = "${sbp.billing.report.kafka.consumer.topic-name}",
+            groupId = "${sbp.billing.report.kafka.consumer.group-id}",
+            containerFactory = "subscriptionBillingReportKafkaListenerContainerFactory")
+    public void consumeSubscriptionBillingReport(@Payload KafkaRequestPayload requestPayload, Acknowledgment ack) {
+    public void consumeSubscriptionBillingReport(@Payload String requestPayload, Acknowledgment ack) {
+        try {
+            log.info("New Subscription Billing Schedule Received: {} ", requestPayload.getRequestId());
+            log.info("New Future Billing Report Request Received From SUB UI {} ", requestPayload);
+            ObjectMapper objectMapper = new ObjectMapper();
+            SbpBillingReport sbpBillingReport = new SbpBillingReport();
+            sbpBillingReport.setRequestId(requestPayload.getRequestId());
+            sbpBillingReport.setCcoId(requestPayload.getCcoId());
+
+            String kafkaRequestPayloadJson=objectMapper.writeValueAsString(requestPayload);
+            sbpBillingReport.setCcoId(kafkaRequestPayloadJson);
+
+            sbpBillingReportRepository.save(sbpBillingReport);
+
+            log.info("Saved the message in the database");
+            FutureBillingReportRequest futureBillingReportRequest = objectMapper.readValue(requestPayload, FutureBillingReportRequest.class);
+            futureBillingReportService.processFutureBillingReport(futureBillingReportRequest);
+            log.info("Completed Processing Future Billing Report Request ID :: {}", futureBillingReportRequest.getRequestId());
+            ack.acknowledge();
+        } catch (JsonProcessingException e) {
+            //todo better logging
+            log.error("Error while parsing the json payload: {}", e.getMessage(), e);
+        } catch (Exception e) {
+            //todo better logging
+            log.error("Error while processing the message: {}", e.getMessage(), e);
+        }
+    }
+}
