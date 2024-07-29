@@ -1,0 +1,49 @@
+package com.cisco.sbp.reporting.sbpreporting.service.futurebillingreport;
+
+import com.cisco.sbp.reporting.sbpreporting.dao.futurebillingreport.SbpBillingReportRepository;
+import com.cisco.sbp.reporting.sbpreporting.model.futurebillingreport.kafka.FutureBillingReportRequest;
+import com.cisco.sbp.reporting.sbpreporting.model.futurebillingreport.sbpDb.SbpFutureBillingReport;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class FutureBillingReportService {
+
+    private final SbpBillingReportRepository sbpBillingReportRepository;
+
+    public FutureBillingReportService(SbpBillingReportRepository sbpBillingReportRepository) {
+        this.sbpBillingReportRepository = sbpBillingReportRepository;
+    }
+
+    public boolean processFutureBillingReport(FutureBillingReportRequest futureBillingReportRequest)
+    {
+        //TODO Add Logger here
+
+        List<SbpFutureBillingReport> sbpFutureBillingReportList = new ArrayList<>();
+        for(FutureBillingReportRequest.Bid bid : futureBillingReportRequest.getBids()) {
+            SbpFutureBillingReport sbpFutureBillingReport = getSbpFutureBillingReport(futureBillingReportRequest, bid);
+            sbpFutureBillingReportList.add(sbpFutureBillingReport);
+            sbpBillingReportRepository.save(sbpFutureBillingReport);
+        }
+
+        //TODO Start Processing Each Bid
+
+        return true;
+    }
+
+    private static SbpFutureBillingReport getSbpFutureBillingReport(FutureBillingReportRequest futureBillingReportRequest, FutureBillingReportRequest.Bid bid) {
+        SbpFutureBillingReport sbpFutureBillingReport = new SbpFutureBillingReport();
+        sbpFutureBillingReport.setRequestId(futureBillingReportRequest.getRequestId());
+        sbpFutureBillingReport.setCcoId(futureBillingReportRequest.getCcoId());
+        sbpFutureBillingReport.setBId(bid.getBid());
+        sbpFutureBillingReport.setUserEmail(futureBillingReportRequest.getUserEmail());
+        sbpFutureBillingReport.setStatus("IN_PROGRESS");
+        sbpFutureBillingReport.setHasUserAccessed("N");
+        sbpFutureBillingReport.setRequestType("FBR");
+        return sbpFutureBillingReport;
+    }
+
+
+}
