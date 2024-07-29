@@ -1,0 +1,92 @@
+package com.cisco.sbp.reporting.sbpreporting.configuration.kafka;
+
+import com.cisco.sbp.reporting.sbpreporting.model.futurebillingreport.kafkaConsumer.KafkaRequestPayload;
+import com.cisco.sbp.reporting.sbpreporting.model.futurebillingreport.kafka.FutureBillingReportRequest;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.support.serializer.JsonSerializer;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@EnableKafka
+@Configuration
+public class KafkaConsumerConfig {
+
+
+    @Value("${sbp.billing.report.kafka.producer.bootstrap-servers}")
+    @Value("${sbp.billing.report.kafka.consumer.bootstrap-servers}")
+    private String bootstrapServers;
+
+    @Value("${sbp.billing.report.kafka.producer.kafka.ssl.key-store-location}")
+    @Value("${sbp.billing.report.kafka.consumer.kafka.ssl.key-store-location}")
+    private String keyStoreLocation;
+
+    @Value("${sbp.billing.report.kafka.producer.kafka.ssl.key-store-password}")
+    @Value("${sbp.billing.report.kafka.consumer.kafka.ssl.key-store-password}")
+    private String keyStorePassword;
+
+    @Value("${sbp.billing.report.kafka.producer.kafka.ssl.trust-store-location}")
+    @Value("${sbp.billing.report.kafka.consumer.kafka.ssl.trust-store-location}")
+    private String trustStoreLocation;
+
+    @Value("${sbp.billing.report.kafka.producer.kafka.ssl.trust-store-password}")
+    @Value("${sbp.billing.report.kafka.consumer.kafka.ssl.trust-store-password}")
+    private String trustStorePassword;
+
+    @Value("${sbp.billing.report.kafka.producer.kafka.ssl.key-password}")
+    @Value("${sbp.billing.report.kafka.consumer.kafka.ssl.key-password}")
+    private String keyPassword;
+
+    @Value("${sbp.billing.report.kafka.consumer.group-id}")
+    private String groupId;
+
+    public Map<String, Object> consumerConfig() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        String groupId = "local-rtp-sbp-sbp";
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+
+        props.put("security.protocol", "SSL");
+        props.put("ssl.keystore.location", keyStoreLocation);
+        props.put("ssl.keystore.type", "JKS");
+        props.put("ssl.keystore.password", keyStorePassword);
+        props.put("ssl.truststore.location", trustStoreLocation);
+        props.put("ssl.truststore.type", "JKS");
+        props.put("ssl.truststore.password", trustStorePassword);
+        props.put("ssl.key.password", keyPassword);
+        return props;
+    }
+
+    @Bean(name = "subscriptionBillingReportConsumerFactory")
+    public ConsumerFactory<String, KafkaRequestPayload> consumerFactory() {
+        return new DefaultKafkaConsumerFactory<>(consumerConfig(), new StringDeserializer(), new JsonDeserializer<>(KafkaRequestPayload.class));
+    public ConsumerFactory<String, FutureBillingReportRequest> consumerFactory() {
+        return new DefaultKafkaConsumerFactory<>(consumerConfig(), new StringDeserializer(), new JsonDeserializer<>(FutureBillingReportRequest.class));
+    }
+
+    @Bean(name = "subscriptionBillingReportKafkaListenerContainerFactory")
+    public ConcurrentKafkaListenerContainerFactory<String, KafkaRequestPayload>
+    public ConcurrentKafkaListenerContainerFactory<String, FutureBillingReportRequest>
+    concurrentKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<
+                String, KafkaRequestPayload> factory
+                String, FutureBillingReportRequest> factory
+                = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory());
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
+        return factory;
+    }
+}
